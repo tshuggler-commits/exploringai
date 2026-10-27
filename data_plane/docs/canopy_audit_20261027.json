@@ -1,0 +1,90 @@
+{
+  "audit_id": "20261027_182837_ede4b97398f1",
+  "mode": "read_only_audit",
+  "source_table": "qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.atlanta_canopy_heat_svi_modeling",
+  "feature_table": "qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.training_data_20261027_163945_a1f7fcb70be3",
+  "sql_sha256": "61f7a2d1385170d26748ea6c98f174c11c422bfb06cde493cb353e7bd0470150",
+  "executed_sql": "-- Read-only profile. Numeric plausibility does not establish units or provenance.\nWITH canopy AS (\n  SELECT GEOID, tree_canopy_pct\n  FROM `qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.atlanta_canopy_heat_svi_modeling`\n),\nunique_canopy AS (\n  SELECT GEOID,\n    COUNT(*) AS source_rows,\n    COUNTIF(tree_canopy_pct IS NOT NULL AND NOT IS_NAN(tree_canopy_pct)\n      AND NOT IS_INF(tree_canopy_pct) AND tree_canopy_pct BETWEEN 0 AND 100) AS valid_rows\n  FROM canopy\n  GROUP BY GEOID\n),\ntracts AS (\n  SELECT geo_id,\n    REGEXP_CONTAINS(geo_id, r'^[0-9]{11}$')\n      AND total_pop > 400\n      AND tract_lat BETWEEN 33.55 AND 34.02\n      AND tract_lon BETWEEN -84.60 AND -84.15 AS ranking_eligible\n  FROM `qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.tract_demographics`\n),\ncoverage AS (\n  SELECT 'demographic_tract_rows' AS population, COUNT(*) AS total_rows,\n    COUNTIF(c.source_rows = 1 AND c.valid_rows = 1) AS usable_rows\n  FROM tracts AS t LEFT JOIN unique_canopy AS c ON t.geo_id = c.GEOID\n  UNION ALL\n  SELECT 'agent_ranking_eligible_tract_rows', COUNT(*),\n    COUNTIF(c.source_rows = 1 AND c.valid_rows = 1)\n  FROM tracts AS t LEFT JOIN unique_canopy AS c ON t.geo_id = c.GEOID\n  WHERE t.ranking_eligible\n  UNION ALL\n  SELECT IF(f.is_eval, 'evaluation_observations', 'training_observations'), COUNT(*),\n    COUNTIF(c.source_rows = 1 AND c.valid_rows = 1)\n  FROM `qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.training_data_20261027_163945_a1f7fcb70be3` AS f LEFT JOIN unique_canopy AS c ON f.geo_id = c.GEOID\n  GROUP BY f.is_eval\n)\nSELECT\n  CURRENT_TIMESTAMP() AS audited_at,\n  (SELECT AS STRUCT\n    COUNT(*) AS source_rows,\n    COUNT(DISTINCT GEOID) AS distinct_geoids,\n    COUNTIF(GEOID IS NULL OR NOT REGEXP_CONTAINS(GEOID, r'^[0-9]{11}$')) AS invalid_geoids,\n    COUNTIF(tree_canopy_pct IS NULL) AS null_canopy_rows,\n    COUNTIF(IS_NAN(tree_canopy_pct) OR IS_INF(tree_canopy_pct)\n      OR tree_canopy_pct < 0 OR tree_canopy_pct > 100) AS invalid_canopy_rows,\n    MIN(IF(NOT IS_NAN(tree_canopy_pct) AND NOT IS_INF(tree_canopy_pct),\n      tree_canopy_pct, NULL)) AS canopy_min,\n    MAX(IF(NOT IS_NAN(tree_canopy_pct) AND NOT IS_INF(tree_canopy_pct),\n      tree_canopy_pct, NULL)) AS canopy_max\n   FROM canopy) AS quality,\n  (SELECT COUNT(*) FROM unique_canopy WHERE source_rows > 1) AS duplicate_geoid_groups,\n  ARRAY(SELECT AS STRUCT population, total_rows, usable_rows,\n    SAFE_DIVIDE(usable_rows, total_rows) AS usable_fraction\n    FROM coverage ORDER BY population) AS coverage,\n  ARRAY(\n    SELECT AS STRUCT option_name, option_value\n    FROM `qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.INFORMATION_SCHEMA.TABLE_OPTIONS`\n    WHERE table_name = 'atlanta_canopy_heat_svi_modeling'\n      AND option_name IN ('description', 'labels')\n    ORDER BY option_name\n  ) AS source_documentation\n",
+  "job": {
+    "job_reference": {
+      "projectId": "qwiklabs-gcp-03-1578f96a5a7a",
+      "jobId": "a4i_20261027_182837_ede4b97398f1_physical_features",
+      "location": "US"
+    },
+    "status": {
+      "state": "DONE"
+    },
+    "statistics": {
+      "creationTime": "1793125718515",
+      "startTime": "1793125718760",
+      "endTime": "1793125719618",
+      "totalBytesProcessed": "10828514",
+      "totalSlotMs": "1258",
+      "finalExecutionDurationMs": "552"
+    },
+    "query_statistics": {
+      "totalBytesProcessed": "10828514",
+      "totalBytesBilled": "41943040",
+      "totalSlotMs": "1258",
+      "cacheHit": false,
+      "statementType": "SELECT"
+    }
+  },
+  "evidence": {
+    "audited_at": "2026-10-27 18:28:38",
+    "coverage": [
+      {
+        "population": "agent_ranking_eligible_tract_rows",
+        "total_rows": "264",
+        "usable_fraction": "0.21212121212121213",
+        "usable_rows": "56"
+      },
+      {
+        "population": "demographic_tract_rows",
+        "total_rows": "353",
+        "usable_fraction": "0.15864022662889518",
+        "usable_rows": "56"
+      },
+      {
+        "population": "evaluation_observations",
+        "total_rows": "3218",
+        "usable_fraction": "0.9269732753262896",
+        "usable_rows": "2983"
+      },
+      {
+        "population": "training_observations",
+        "total_rows": "20168",
+        "usable_fraction": "0.8407873859579532",
+        "usable_rows": "16957"
+      }
+    ],
+    "duplicate_geoid_groups": "0",
+    "quality": {
+      "canopy_max": "67.61514928204012",
+      "canopy_min": "9.93584439832788",
+      "distinct_geoids": "109",
+      "invalid_canopy_rows": "0",
+      "invalid_geoids": "0",
+      "null_canopy_rows": "0",
+      "source_rows": "109"
+    },
+    "source_documentation": []
+  },
+  "feature_admission": "BLOCKED_PENDING_PROVENANCE_AND_COVERAGE_REVIEW",
+  "missing_source_contract": [
+    "Publisher and source URL or asset identifier",
+    "License and permitted uses",
+    "Observation vintage and temporal relationship to the heat campaign",
+    "Confirmed units and canopy measurement methodology",
+    "Tract boundary vintage, aggregation and GEOID crosswalk methodology",
+    "Reproducible extraction/transformation and original input checksums"
+  ],
+  "limitations": [
+    "Value range alone does not establish percent units; no rescaling is performed.",
+    "Sources are read as of this query, not retained as immutable snapshots.",
+    "Observation coverage is weighted by campaign sampling, not land area or population.",
+    "Ranking eligibility mirrors the current agent filter, not validated geographic support.",
+    "No missing canopy values are imputed and no rows are admitted to a model.",
+    "No model was trained, evaluated for acceptance, or promoted by this audit."
+  ]
+}

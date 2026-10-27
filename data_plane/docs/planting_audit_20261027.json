@@ -1,0 +1,142 @@
+{
+  "audit_id": "20261027_192858_39b5a022206f",
+  "mode": "read_only_audit",
+  "source_table": "qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.atlanta_tree_planting_optimization",
+  "executed_sql": "-- Read-only. Plausible values are not proof of measured data or verified units.\nWITH planting AS (\n  SELECT * FROM `qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.atlanta_tree_planting_optimization`\n),\nkeys AS (\n  SELECT GEOID, COUNT(*) AS n FROM planting GROUP BY GEOID\n),\ntracts AS (\n  SELECT *, REGEXP_CONTAINS(geo_id, r'^[0-9]{11}$') AND total_pop > 400\n    AND tract_lat BETWEEN 33.55 AND 34.02\n    AND tract_lon BETWEEN -84.60 AND -84.15 AS ranking_eligible\n  FROM `qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.tract_demographics`\n),\nquality AS (\n  SELECT field, COUNT(*) AS n,\n    COUNTIF(value IS NULL) AS null_rows,\n    COUNTIF(IS_NAN(value) OR IS_INF(value)) AS nonfinite_rows,\n    COUNTIF(value < 0 OR (field = 'marginal_planting_cost' AND value = 0)\n      OR (field = 'tree_canopy_pct' AND value > 100)) AS out_of_range_rows,\n    MIN(IF(NOT IS_NAN(value) AND NOT IS_INF(value), value, NULL)) AS minimum,\n    MAX(IF(NOT IS_NAN(value) AND NOT IS_INF(value), value, NULL)) AS maximum\n  FROM planting CROSS JOIN UNNEST([\n    STRUCT('tree_canopy_pct' AS field, tree_canopy_pct AS value),\n    STRUCT('plantable_row_sqm', plantable_row_sqm),\n    STRUCT('marginal_planting_cost', marginal_planting_cost),\n    STRUCT('lst_temp', lst_temp),\n    STRUCT('dist_to_facility', dist_to_facility),\n    STRUCT('dist_to_transit', dist_to_transit)\n  ])\n  GROUP BY field\n)\nSELECT\n  CURRENT_TIMESTAMP() AS audited_at,\n  (SELECT AS STRUCT COUNT(*) AS n, COUNT(DISTINCT GEOID) AS unique_geoids,\n    COUNTIF(GEOID IS NULL OR NOT REGEXP_CONTAINS(GEOID, r'^[0-9]{11}$')) AS invalid_geoids\n    FROM planting) AS key_quality,\n  (SELECT COUNT(*) FROM keys WHERE n > 1) AS duplicate_geoid_groups,\n  ARRAY(SELECT AS STRUCT * FROM quality ORDER BY field) AS numeric_quality,\n  (SELECT AS STRUCT COUNT(*) AS demographic_rows,\n    COUNTIF(k.n = 1) AS unique_planting_matches,\n    COUNTIF(t.ranking_eligible) AS ranking_rows,\n    COUNTIF(t.ranking_eligible AND k.n = 1) AS ranking_unique_planting_matches\n    FROM tracts AS t LEFT JOIN keys AS k ON t.geo_id = k.GEOID) AS coverage,\n  ARRAY(SELECT AS STRUCT option_name, option_value\n    FROM `qwiklabs-gcp-03-1578f96a5a7a.a4i_climate.INFORMATION_SCHEMA.TABLE_OPTIONS`\n    WHERE table_name = 'atlanta_tree_planting_optimization'\n      AND option_name IN ('description', 'labels')\n    ORDER BY option_name) AS source_documentation\n",
+  "sql_sha256": "86d36cdeb559dd0ae7d84161b9f9e052392b40513cda098b7e228fe9fc059a8b",
+  "job": {
+    "job_reference": {
+      "projectId": "qwiklabs-gcp-03-1578f96a5a7a",
+      "jobId": "a4i_20261027_192858_39b5a022206f_planting",
+      "location": "US"
+    },
+    "status": {
+      "state": "DONE"
+    },
+    "statistics": {
+      "creationTime": "1793129340194",
+      "startTime": "1793129340325",
+      "endTime": "1793129340779",
+      "totalBytesProcessed": "10505470",
+      "totalSlotMs": "806",
+      "finalExecutionDurationMs": "227"
+    },
+    "query_statistics": {
+      "totalBytesProcessed": "10505470",
+      "totalBytesBilled": "31457280",
+      "totalSlotMs": "806",
+      "cacheHit": false,
+      "statementType": "SELECT"
+    }
+  },
+  "evidence": {
+    "audited_at": "2026-10-27 19:29:00",
+    "coverage": {
+      "demographic_rows": "353",
+      "ranking_rows": "264",
+      "ranking_unique_planting_matches": "56",
+      "unique_planting_matches": "56"
+    },
+    "duplicate_geoid_groups": "0",
+    "key_quality": {
+      "invalid_geoids": "0",
+      "n": "109",
+      "unique_geoids": "109"
+    },
+    "numeric_quality": [
+      {
+        "field": "dist_to_facility",
+        "maximum": "5397.456912487158",
+        "minimum": "172.82462686808736",
+        "n": "109",
+        "nonfinite_rows": "0",
+        "null_rows": "0",
+        "out_of_range_rows": "0"
+      },
+      {
+        "field": "dist_to_transit",
+        "maximum": "7149.952272072744",
+        "minimum": "813.3860726871713",
+        "n": "109",
+        "nonfinite_rows": "0",
+        "null_rows": "0",
+        "out_of_range_rows": "0"
+      },
+      {
+        "field": "lst_temp",
+        "maximum": "103.5401097420643",
+        "minimum": "91.44757541783815",
+        "n": "109",
+        "nonfinite_rows": "0",
+        "null_rows": "0",
+        "out_of_range_rows": "0"
+      },
+      {
+        "field": "marginal_planting_cost",
+        "maximum": "1500.0",
+        "minimum": "300.0",
+        "n": "109",
+        "nonfinite_rows": "0",
+        "null_rows": "0",
+        "out_of_range_rows": "0"
+      },
+      {
+        "field": "plantable_row_sqm",
+        "maximum": "25000.0",
+        "minimum": "593.3360594629087",
+        "n": "109",
+        "nonfinite_rows": "0",
+        "null_rows": "0",
+        "out_of_range_rows": "0"
+      },
+      {
+        "field": "tree_canopy_pct",
+        "maximum": "67.61514928204012",
+        "minimum": "9.93584439832788",
+        "n": "109",
+        "nonfinite_rows": "0",
+        "null_rows": "0",
+        "out_of_range_rows": "0"
+      }
+    ],
+    "source_documentation": []
+  },
+  "scenario": {
+    "status": "BLOCKED_MISSING_VERIFIED_INPUTS",
+    "horizon": "10 years from planting; planting date must be specified",
+    "objective": "Cumulative avoided human exposure to ambient heat per dollar",
+    "proposed_benefit_unit": "person-degree-Celsius-hours",
+    "benefit_definition": "Sum over years, locations and hours of people present times the reduction in max(ambient temperature minus an agreed heat threshold, 0), relative to no planting.",
+    "cost_definition": "Present value of incremental lifecycle costs: planting, site preparation, watering, maintenance, replacements and other declared program costs, in a stated currency and price year. Avoid counting included cost components twice.",
+    "ratio_definition": "Expected cumulative avoided exposure / expected lifecycle cost. Report numerator, denominator and uncertainty separately; do not silently substitute mean sample ratios.",
+    "required_decisions": [
+      "Heat threshold and whether humidity-adjusted exposure is a separate endpoint",
+      "Planting date, currency, price year, cost discount rate and benefit discount convention",
+      "Public budget, intervention scale, feasible sites and policy/equity constraints"
+    ],
+    "requirements": {
+      "source_provenance_and_license": "UNVERIFIED",
+      "cost_currency_price_year_and_per_unit_definition": "UNVERIFIED",
+      "plantable_area_method_boundary_vintage_and_site_feasibility": "UNVERIFIED",
+      "species_growth_and_yearly_canopy_trajectory": "UNVERIFIED",
+      "survival_mortality_replacement_and_maintenance": "UNVERIFIED",
+      "causal_cooling_response_and_applicable_climate": "UNVERIFIED",
+      "hourly_ambient_heat_and_people_present": "UNVERIFIED",
+      "no_planting_counterfactual_and_existing_canopy_trajectory": "UNVERIFIED",
+      "discount_rates_and_uncertainty_distributions": "UNVERIFIED"
+    },
+    "relief_per_dollar": null,
+    "recommended_sites": [],
+    "interpretation": "A scenario estimate is not a validated causal effect or medical outcome."
+  },
+  "limitations": [
+    "Current source reads, not immutable source snapshots.",
+    "Range checks do not verify units, provenance or whether fields are synthetic.",
+    "Negative LST is flagged for review only; temperature units are unverified.",
+    "Ranking coverage mirrors the agent eligibility filter, not validated geographic support.",
+    "Land-surface temperature is not ambient temperature or human exposure.",
+    "Tract resident population is not hourly pedestrian presence.",
+    "Canopy correlation and model attribution do not establish intervention cooling.",
+    "No training, ranking by cost-effectiveness, promotion or agent change is performed."
+  ]
+}

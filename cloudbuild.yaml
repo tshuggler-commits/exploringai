@@ -1,0 +1,208 @@
+substitutions:
+  _REGION: us-central1
+  _AR_REPOSITORY: walkability
+  _SERVICE_NAME: atlanta-heat-advisor
+  _RUN_SERVICE_ACCOUNT: ""
+  _ALLOW_UNAUTHENTICATED: "false"
+  _BQ_DATASET: a4i_climate
+  _BQ_LOCATION: US
+  _VERTEX_LOCATION: us-central1
+  _GEMINI_MODEL: gemini-2.5-flash
+  _MODEL_FAMILY: atlanta
+  _MIN_INSTANCES: "0"
+  _MAX_INSTANCES: "5"
+  _MEMORY: 1Gi
+  _CPU: "1"
+  _CONCURRENCY: "10"
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=agent/Dockerfile
+      - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}:build-${BUILD_ID}
+      - .
+
+  - id: test
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - build
+    args:
+      - run
+      - --rm
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}:build-${BUILD_ID}
+      - python
+      - -m
+      - unittest
+      - discover
+      - -s
+      - /app/agent/tests
+      - -p
+      - test_*.py
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - test
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}:build-${BUILD_ID}
+
+  - id: deploy-candidate
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+    entrypoint: bash
+    waitFor:
+      - push
+    env:
+      - PROJECT_ID=${PROJECT_ID}
+      - BUILD_ID=${BUILD_ID}
+      - IMAGE_URI=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}:build-${BUILD_ID}
+      - REGION=${_REGION}
+      - SERVICE_NAME=${_SERVICE_NAME}
+      - RUN_SERVICE_ACCOUNT=${_RUN_SERVICE_ACCOUNT}
+      - ALLOW_UNAUTHENTICATED=${_ALLOW_UNAUTHENTICATED}
+      - BQ_DATASET=${_BQ_DATASET}
+      - BQ_LOCATION=${_BQ_LOCATION}
+      - VERTEX_LOCATION=${_VERTEX_LOCATION}
+      - GEMINI_MODEL=${_GEMINI_MODEL}
+      - MODEL_FAMILY=${_MODEL_FAMILY}
+      - MIN_INSTANCES=${_MIN_INSTANCES}
+      - MAX_INSTANCES=${_MAX_INSTANCES}
+      - MEMORY=${_MEMORY}
+      - CPU=${_CPU}
+      - CONCURRENCY=${_CONCURRENCY}
+    args:
+      - -ceu
+      - |
+        if [[ -z "$$RUN_SERVICE_ACCOUNT" ]]; then
+          echo "Set _RUN_SERVICE_ACCOUNT to a dedicated Cloud Run service account." >&2
+          exit 1
+        fi
+
+        image_digest="$$(gcloud artifacts docker images describe "$$IMAGE_URI" \
+          --format='value(image_summary.digest)')"
+        if [[ -z "$$image_digest" ]]; then
+          echo "Could not resolve the pushed image digest for $$IMAGE_URI." >&2
+          exit 1
+        fi
+
+        image_ref="$${IMAGE_URI%:*}@$${image_digest}"
+        revision_tag="ci-$${BUILD_ID:0:12}"
+        if [[ "$$ALLOW_UNAUTHENTICATED" == "true" ]]; then
+          access_flag="--allow-unauthenticated"
+        else
+          access_flag="--no-allow-unauthenticated"
+        fi
+
+        gcloud run deploy "$$SERVICE_NAME" \
+          --project="$$PROJECT_ID" \
+          --region="$$REGION" \
+          --platform=managed \
+          --image="$$image_ref" \
+          --service-account="$$RUN_SERVICE_ACCOUNT" \
+          --port=8080 \
+          --memory="$$MEMORY" \
+          --cpu="$$CPU" \
+          --concurrency="$$CONCURRENCY" \
+          --min-instances="$$MIN_INSTANCES" \
+          --max-instances="$$MAX_INSTANCES" \
+          --timeout=300 \
+          --execution-environment=gen2 \
+          --no-traffic \
+          --tag="$$revision_tag" \
+          --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=$$PROJECT_ID,GOOGLE_CLOUD_LOCATION=$$VERTEX_LOCATION,BQ_DATASET=$$BQ_DATASET,BQ_LOCATION=$$BQ_LOCATION,GEMINI_MODEL=$$GEMINI_MODEL,MODEL_FAMILY=$$MODEL_FAMILY,AUTO_BOOTSTRAP_BQML=false" \
+          "$$access_flag"
+
+        revision="$$(gcloud run services describe "$$SERVICE_NAME" \
+          --project="$$PROJECT_ID" --region="$$REGION" \
+          --format='value(status.latestCreatedRevisionName)')"
+        ready="$$(gcloud run revisions describe "$$revision" \
+          --project="$$PROJECT_ID" --region="$$REGION" \
+          --format='value(status.conditions[0].status)')"
+        if [[ "$$ready" != "True" ]]; then
+          echo "Candidate revision $$revision is not Ready (status: $$ready)." >&2
+          exit 1
+        fi
+
+        service_url="$$(gcloud run services describe "$$SERVICE_NAME" \
+          --project="$$PROJECT_ID" --region="$$REGION" \
+          --format='value(status.url)')"
+        if [[ -z "$$service_url" ]]; then
+          echo "Could not resolve the Cloud Run service URL." >&2
+          exit 1
+        fi
+        candidate_url="https://$${revision_tag}---$${service_url#https://}"
+        printf '%s' "$$revision" > /workspace/candidate-revision
+        printf '%s' "$$revision_tag" > /workspace/candidate-tag
+        printf '%s' "$$candidate_url" > /workspace/candidate-url
+        echo "Candidate revision $$revision is ready at $$candidate_url."
+
+  - id: smoke-test-candidate
+    name: python:3.11-slim
+    waitFor:
+      - deploy-candidate
+    env:
+      - ALLOW_UNAUTHENTICATED=${_ALLOW_UNAUTHENTICATED}
+    entrypoint: python3
+    args:
+      - -c
+      - |
+        import json
+        import os
+        import time
+        from pathlib import Path
+        from urllib.error import URLError
+        from urllib.request import urlopen
+
+        if os.environ["ALLOW_UNAUTHENTICATED"] != "true":
+            print("Private service: skipping unauthenticated HTTP smoke test.")
+            raise SystemExit(0)
+
+        url = Path("/workspace/candidate-url").read_text().strip() + "/health"
+        last_error = None
+        for attempt in range(10):
+            try:
+                with urlopen(url, timeout=10) as response:
+                    body = json.load(response)
+                if body.get("status") != "ok":
+                    raise RuntimeError(f"Unexpected health response: {body!r}")
+                print(f"Health check passed: {url}")
+                break
+            except (URLError, TimeoutError, RuntimeError) as error:
+                last_error = error
+                if attempt < 9:
+                    time.sleep(3)
+        else:
+            raise SystemExit(f"Candidate health check failed: {last_error}")
+
+  - id: promote
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+    entrypoint: bash
+    waitFor:
+      - smoke-test-candidate
+    env:
+      - PROJECT_ID=${PROJECT_ID}
+      - REGION=${_REGION}
+      - SERVICE_NAME=${_SERVICE_NAME}
+    args:
+      - -ceu
+      - |
+        revision="$$(cat /workspace/candidate-revision)"
+        revision_tag="$$(cat /workspace/candidate-tag)"
+        if [[ -z "$$revision" || -z "$$revision_tag" ]]; then
+          echo "Candidate revision metadata is missing." >&2
+          exit 1
+        fi
+        gcloud run services update-traffic "$$SERVICE_NAME" \
+          --project="$$PROJECT_ID" --region="$$REGION" \
+          --to-revisions="$$revision=100"
+        gcloud run services update-traffic "$$SERVICE_NAME" \
+          --project="$$PROJECT_ID" --region="$$REGION" \
+          --remove-tags="$$revision_tag"
+        echo "Promoted ready revision $$revision."
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s

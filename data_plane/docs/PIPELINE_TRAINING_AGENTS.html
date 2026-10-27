@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>Training Pipeline and Agent Handoff | A4I Climate</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --surface: #121a2d;
+      --surface-raised: #18233a;
+      --line: #293650;
+      --text: #edf3ff;
+      --muted: #a7b4ca;
+      --cyan: #66e3d1;
+      --blue: #8baaff;
+      --violet: #c1a2ff;
+      --amber: #ffd27b;
+      --green: #83e6a1;
+      --red: #ff9a9a;
+      --shadow: 0 18px 48px rgb(0 0 0 / 24%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 12% 0%, rgb(61 101 183 / 18%), transparent 34rem),
+        radial-gradient(ellipse at 95% 22%, rgb(54 184 164 / 10%), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: var(--cyan); }
+
+    code, pre, .eyebrow, .tag, .step-number {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    code {
+      color: #c5d5ff;
+      overflow-wrap: anywhere;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    header {
+      padding: 72px 0 48px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      color: var(--cyan);
+      font-size: .78rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 860px;
+      margin: 16px 0;
+      font-size: clamp(2.4rem, 6vw, 4.7rem);
+      letter-spacing: -.055em;
+      line-height: 1.02;
+    }
+
+    h1 span {
+      color: var(--cyan);
+      text-shadow: 0 0 36px rgb(102 227 209 / 24%);
+    }
+
+    .lead {
+      max-width: 770px;
+      color: var(--muted);
+      font-size: 1.15rem;
+    }
+
+    .meta-row, .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 24px;
+    }
+
+    .tag {
+      display: inline-flex;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #c8d5ea;
+      font-size: .78rem;
+    }
+
+    main { padding: 36px 0 76px; }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 42px;
+    }
+
+    nav a {
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: .88rem;
+      text-decoration: none;
+    }
+
+    nav a:hover, nav a:focus-visible {
+      border-color: var(--cyan);
+      color: var(--text);
+    }
+
+    section { margin: 56px 0; scroll-margin-top: 24px; }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: clamp(1.7rem, 3.5vw, 2.45rem);
+      letter-spacing: -.035em;
+      line-height: 1.15;
+    }
+
+    h3 { margin: 0 0 8px; font-size: 1.08rem; }
+
+    .section-intro {
+      max-width: 760px;
+      margin: 0 0 24px;
+      color: var(--muted);
+    }
+
+    .card, .step, .notice, .output-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgb(24 35 58 / 92%), rgb(18 26 45 / 96%));
+      box-shadow: var(--shadow);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      counter-reset: flow;
+    }
+
+    .step {
+      position: relative;
+      min-height: 220px;
+      padding: 20px;
+      overflow: hidden;
+      counter-increment: flow;
+    }
+
+    .step::before {
+      content: "0" counter(flow);
+      display: block;
+      margin-bottom: 18px;
+      color: var(--cyan);
+      font: 700 .8rem ui-monospace, monospace;
+      letter-spacing: .12em;
+    }
+
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      z-index: 1;
+      top: 50%;
+      right: -14px;
+      width: 26px;
+      color: var(--cyan);
+      font-size: 1.2rem;
+      text-align: center;
+    }
+
+    .step p, .card p, .output-card p { margin: 0; color: var(--muted); }
+
+    .step .tag-row { margin-top: 16px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card, .output-card { padding: 22px; }
+
+    .accent-cyan { border-top: 2px solid var(--cyan); }
+    .accent-violet { border-top: 2px solid var(--violet); }
+    .accent-blue { border-top: 2px solid var(--blue); }
+    .accent-amber { border-top: 2px solid var(--amber); }
+
+    ul, ol { padding-left: 1.2rem; }
+    li { margin: 7px 0; color: var(--muted); }
+    li strong { color: var(--text); }
+
+    .feature-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 0;
+    }
+
+    .feature-list code {
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: rgb(7 12 23 / 44%);
+      font-size: .8rem;
+    }
+
+    .splitbar {
+      display: flex;
+      min-height: 35px;
+      margin: 17px 0 8px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #101729;
+      font-size: .76rem;
+      font-weight: 650;
+      text-align: center;
+    }
+
+    .splitbar span { display: grid; place-items: center; padding: 5px; }
+    .train { width: 80%; color: #12251c; background: var(--green); }
+    .eval { width: 20%; color: #241a07; background: var(--amber); }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 18px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #080d18;
+      color: #d3e2ff;
+      font-size: .86rem;
+      line-height: 1.55;
+    }
+
+    .notice {
+      padding: 20px 22px;
+      border-color: rgb(255 210 123 / 38%);
+      background: linear-gradient(125deg, rgb(72 51 18 / 34%), rgb(18 26 45 / 94%));
+    }
+
+    .notice strong { color: var(--amber); }
+
+    .status-line {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .status-line:last-child { border-bottom: 0; }
+    .status-key { color: var(--muted); }
+    .status-value { color: var(--text); }
+    .ok { color: var(--green); }
+    .pending { color: var(--amber); }
+    .blocked { color: var(--red); }
+
+    .contract {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .contract .output-card { height: 100%; }
+
+    .callout {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-left: 3px solid var(--blue);
+      background: rgb(139 170 255 / 8%);
+      color: var(--muted);
+    }
+
+    footer {
+      padding: 24px 0 42px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    @media (max-width: 850px) {
+      .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .step:nth-child(2)::after { display: none; }
+    }
+
+    @media (max-width: 620px) {
+      .wrap { width: min(100% - 28px, 1120px); }
+      header { padding-top: 48px; }
+      .flow, .grid-2, .contract { grid-template-columns: 1fr; }
+      .step { min-height: auto; }
+      .step::after { display: none; }
+      .status-line { grid-template-columns: 1fr; gap: 2px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="eyebrow">A4I Climate · Atlanta Heat Resilience</div>
+      <h1>From data to <span>agent</span></h1>
+      <p class="lead">
+        How we prepare data, train and audit a BigQuery ML candidate, and what information the
+        agent should receive to turn a prediction into an explainable recommendation.
+      </p>
+      <div class="meta-row">
+        <span class="tag">Google Cloud: qwiklabs-gcp-03-1578f96a5a7a</span>
+        <span class="tag">Dataset: a4i_climate · US</span>
+        <span class="tag">Model: LINEAR_REG</span>
+        <span class="tag">Candidate ≠ production</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <nav aria-label="Navigation">
+      <a href="#overview">Overview</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#training">Training</a>
+      <a href="#tuning-audit">Tuning and audit</a>
+      <a href="#output">Agent output</a>
+      <a href="#status">Status and next steps</a>
+      <a href="#ranking-evidence">Ranking evidence</a>
+      <a href="#tree-planting">Ten-year planting scenarios</a>
+    </nav>
+
+    <section id="overview">
+      <div class="eyebrow">01 · Overview</div>
+      <h2>An auditable candidate, not a silent change</h2>
+      <p class="section-intro">
+        Training creates a new model version and preserves the active version. It checks the
+        source data and features first, then trains and evaluates against a spatial holdout. The
+        agent should only receive an explained prediction after explicit review and handoff.
+      </p>
+      <div class="notice">
+        <strong>Key point:</strong> running training does not automatically update
+        <code>heat_offset_model</code>, reconfigure the agent, or promote the candidate.
+        Promotion is outside the current runner.
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <div class="eyebrow">02 · Data flow</div>
+      <h2>Pipeline stages</h2>
+      <p class="section-intro">
+        The workflow runs through <code>data_plane.pipelines.train_candidate</code>. It uses BigQuery source
+        tables and versioned SQL in <code>data_plane/sql/</code>; artifact names include a unique run ID.
+      </p>
+      <div class="flow">
+        <article class="step">
+          <h3>Sources</h3>
+          <p>Checks for data in heat observations, demographics, station temperatures, and daily weather.</p>
+          <div class="tag-row">
+            <span class="tag">heat_observations</span>
+            <span class="tag">tract_demographics</span>
+          </div>
+        </article>
+        <article class="step">
+          <h3>Snapshots</h3>
+          <p>Fixes a reference time and snapshots heat and demographic data so the run uses consistent sources.</p>
+          <div class="tag-row">
+            <span class="tag">heat_snapshot_<em>run_id</em></span>
+            <span class="tag">tract_snapshot_<em>run_id</em></span>
+          </div>
+        </article>
+        <article class="step">
+          <h3>Features</h3>
+          <p>Assigns each observation to the nearest tract centroid, cleans Census values, and computes the offset and spatial split.</p>
+          <div class="tag-row">
+            <span class="tag">training_data_<em>run_id</em></span>
+          </div>
+        </article>
+        <article class="step">
+          <h3>Train and evaluate</h3>
+          <p>Trains a candidate model, validates its metrics, and tests that a real explanation can be generated.</p>
+          <div class="tag-row">
+            <span class="tag">heat_offset_model_<em>run_id</em></span>
+          </div>
+        </article>
+      </div>
+      <div class="callout">
+        Each stage records SQL, parameters, job IDs, and results in
+        <code>model_training_events</code>. This workflow appends to the table, which is
+        partitioned by date and clustered by run/stage. The successful terminal state is
+        <code>VALIDATED_CANDIDATE</code>.
+        Run snapshots and feature/residual tables are retained under versioned names; see the
+        <a href="BIGQUERY_SCHEMA.md">BigQuery schema and artifact inventory</a>.
+      </div>
+    </section>
+
+    <section id="training">
+      <div class="eyebrow">03 · Model and safeguards</div>
+      <h2>Features, target, and validation</h2>
+      <div class="grid-2">
+        <article class="card accent-cyan">
+          <h3>Target: heat offset</h3>
+          <p>
+            The <code>offset_f</code> target is the observed temperature minus the mean calculated
+            from training rows only. The agent interprets the result as a difference from that
+            reference, not as an absolute temperature.
+          </p>
+          <div class="splitbar" aria-label="Approximately 80 percent training and 20 percent evaluation">
+            <span class="train">Training cells</span>
+            <span class="eval">Holdout cells</span>
+          </div>
+          <p>
+            The split is deterministic, using 0.02° geographic cells and a modulo-five hash.
+            Cells are not shared between training and evaluation; the realized proportion depends
+            on the observation distribution.
+          </p>
+        </article>
+        <article class="card accent-violet">
+          <h3>Model feature contract</h3>
+          <p>Eight numeric inputs shared with the agent's inference workflow:</p>
+          <div class="feature-list">
+            <code>latitude</code><code>longitude</code><code>median_income</code>
+            <code>poverty_rate</code><code>no_vehicle_rate</code><code>median_age</code>
+            <code>housing_units</code><code>median_year_structure_built</code>
+          </div>
+          <p style="margin-top:16px">
+            Observed temperature, IDs, cells, imputation flags, and the split flag are excluded
+            from the model's predictive features.
+          </p>
+        </article>
+      </div>
+      <div class="grid-2" style="margin-top:16px">
+        <article class="card accent-blue">
+          <h3>Quality gates</h3>
+          <ul>
+            <li>One feature row per observation and non-empty training/evaluation splits.</li>
+            <li>No shared cells or null/non-finite values in features or target.</li>
+            <li>Clean income values and an exact match to the eight-feature contract.</li>
+            <li>Candidate MAE must be no worse than the zero-offset baseline.</li>
+            <li><code>R² ≥ 0.98</code> blocks the candidate for possible leakage review.</li>
+            <li>Negative R² or MSE worse than baseline is recorded as a warning; every candidate requires review.</li>
+          </ul>
+        </article>
+        <article class="card accent-amber">
+          <h3>Limitations to keep with the result</h3>
+          <ul>
+            <li>A nearest centroid is an approximation, not a point-in-tract polygon match.</li>
+            <li>There is no spatial buffer between neighboring cells, which may remain correlated.</li>
+            <li>A single campaign does not demonstrate temporal generalization.</li>
+            <li>Socioeconomic attributions are associations, not causal intervention effects.</li>
+          </ul>
+        </article>
+      </div>
+      <pre><code>export GOOGLE_CLOUD_PROJECT=qwiklabs-gcp-03-1578f96a5a7a
+export BQ_DATASET=a4i_climate
+export BQ_LOCATION=US
+
+python3 -m data_plane.pipelines.train_candidate            # Plan only; no BigQuery calls or writes
+python3 -m data_plane.pipelines.train_candidate --execute  # Creates and validates the candidate</code></pre>
+    </section>
+
+    <section id="tuning-audit">
+      <div class="eyebrow">04 · Follow-up experiments</div>
+      <h2>Tuning and spatial stress test</h2>
+      <p class="section-intro">
+        These are separate, versioned workflows that start from a completed parent run. They
+        preserve the active model and agent. Neither result is an independent production
+        certification or an automatic promotion.
+      </p>
+      <div class="grid-2">
+        <article class="card accent-violet">
+          <h3>Ridge tuning</h3>
+          <p>
+            <code>data_plane.pipelines.tune_candidate</code> requires a
+            <code>VALIDATED_CANDIDATE</code> parent. It snapshots the parent's prepared features,
+            then compares L2 values 0, 1000, and 10000 across three spatial folds drawn only from
+            the outer training rows. Each inner-fold target anchor is computed from its fitting
+            rows only. Lowest equal-fold mean MSE selects the configuration; ties prefer stronger
+            regularization.
+          </p>
+          <pre><code>python3 -m data_plane.pipelines.tune_candidate --parent-run &lt;validated_run_id&gt;
+python3 -m data_plane.pipelines.tune_candidate --parent-run &lt;validated_run_id&gt; --execute</code></pre>
+          <p style="margin-top:14px">
+            After selection is recorded, the chosen model is refit on all outer training rows and
+            scored once on the preserved outer holdout. The event is
+            <code>EXPERIMENT_COMPLETED</code>. That holdout was already inspected during
+            development, so this score is not a new independent certification.
+          </p>
+        </article>
+        <article class="card accent-amber">
+          <h3>500 m buffer audit</h3>
+          <p>
+            <code>data_plane.pipelines.audit_candidate</code> requires a completed tuning experiment. It
+            removes training readings within 500 m of any holdout reading, verifies no violating
+            pairs remain, recomputes the target anchor, and refits the already-selected L2 value
+            without another hyperparameter search.
+          </p>
+          <pre><code>python3 -m data_plane.pipelines.audit_candidate --parent-run &lt;tuning_run_id&gt;
+python3 -m data_plane.pipelines.audit_candidate --parent-run &lt;tuning_run_id&gt; --execute</code></pre>
+          <p style="margin-top:14px">
+            It preserves the holdout and writes parent/buffered residual tables plus aggregate
+            error slices. The terminal event is <code>BUFFER_AUDIT_COMPLETED</code>. Because the
+            fitting rows and target anchor change, this is a stress test—not a replacement score
+            or a new independent test.
+          </p>
+        </article>
+      </div>
+      <div class="grid-2" style="margin-top:16px">
+        <article class="card">
+          <h3>What the residual report shows</h3>
+          <p>
+            Row and tract counts, MAE, MSE, signed bias, approximate 90th-percentile absolute
+            error, and zero-offset baseline MAE. Slices cover spatial cells, income imputation,
+            poverty, no-vehicle rate, and tract-centroid distance; groups with fewer than 30
+            readings are omitted.
+          </p>
+          <div class="callout">
+            The 90th-percentile error is descriptive for this holdout; it is not a calibrated
+            prediction interval. Error slices are diagnostics, not a fairness certification.
+          </div>
+        </article>
+        <article class="card">
+          <h3>Recorded experiment results</h3>
+          <ul>
+            <li>
+              Ridge tuning selected <code>L2=1000</code>. On the previously inspected 3,218-row
+              holdout, MAE was 1.4626°F and MSE 3.3254 (parent: 1.4984°F and 3.6317); R² was
+              -0.0112 and MSE remained above the 3.2956 zero-offset baseline.
+            </li>
+            <li>
+              The 500 m audit retained 18,018 of 20,168 fitting readings, kept all 3,218 holdout
+              readings, and found no buffer violations. Buffered MAE was 1.4496°F, MSE 3.1382,
+              and R² 0.0458; interpret these as stress-test diagnostics, not independent
+              certification.
+            </li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="output">
+      <div class="eyebrow">05 · Agent handoff</div>
+      <h2>What the agent should receive</h2>
+      <p class="section-intro">
+        The runner returns a training summary for review. A separate inference interface should
+        provide a structured result for ADK/Gemini to compose a municipal response without
+        inventing numbers and while preserving the offset's reference baseline.
+      </p>
+      <div class="contract">
+        <article class="output-card accent-blue">
+          <h3>A. Training run summary</h3>
+          <p>The process prints JSON with candidate references and evaluation data:</p>
+          <pre><code>{
+  "run_id": "UTC_timestamp_suffix",
+  "candidate_model": "...heat_offset_model_&lt;run_id&gt;",
+  "feature_table": "...training_data_&lt;run_id&gt;",
+  "feature_stats": {
+    "row_count": "...",
+    "train_rows": "...",
+    "eval_rows": "..."
+  },
+  "metrics": {
+    "mean_absolute_error": "...",
+    "mean_squared_error": "...",
+    "r2_score": "..."
+  },
+  "zero_offset_baseline": "...",
+  "quality_warnings": [],
+  "active_model_unchanged": true,
+  "promoted": false,
+  "promotion_review_required": true
+}</code></pre>
+          <p style="margin-top:14px">
+            Ellipses indicate values computed when the workflow runs; they are not preset metrics.
+          </p>
+        </article>
+        <article class="output-card accent-cyan">
+          <h3>B. Explained prediction result</h3>
+          <p>
+            <code>data_plane/sql/explain_prediction.sql</code> queries the candidate with coordinates and
+            returns one row with the offset, three attributions, and tract context:
+          </p>
+          <pre><code>{
+  "predicted_offset_f": 3.4,
+  "top_feature_attributions": [
+    { "feature": "...", "attribution": "..." },
+    { "feature": "...", "attribution": "..." },
+    { "feature": "...", "attribution": "..." }
+  ],
+  "geo_id": "...",
+  "total_pop": "...",
+  "income_imputed": false
+}</code></pre>
+          <p style="margin-top:14px">
+            Example values are illustrative. Inference must apply the same Census-value fallbacks
+            and validate that the location is within supported coverage.
+          </p>
+        </article>
+      </div>
+      <div class="callout">
+        The agent tool should turn this result into a clear explanation: estimated offset in °F,
+        reference baseline, leading contributors, and relevant demographic context. If given a
+        baseline forecast, it can calculate localized temperature as
+        <code>forecast + offset</code>, clearly labeling it as an estimate.
+      </div>
+    </section>
+
+    <section id="status">
+      <div class="eyebrow">06 · Integration status</div>
+      <h2>What is connected and what remains</h2>
+      <div class="card">
+        <div class="status-line">
+          <div class="status-key">Training</div>
+          <div class="status-value"><span class="ok">✓</span> Versioned candidate, audited features, spatial evaluation, and explanation smoke test.</div>
+        </div>
+        <div class="status-line">
+          <div class="status-key">Active model</div>
+          <div class="status-value"><span class="ok">✓</span> The runner records its metadata before/after and requires the active model to remain unchanged.</div>
+        </div>
+        <div class="status-line">
+          <div class="status-key">Tuning and audit</div>
+          <div class="status-value"><span class="ok">✓</span> Separate ridge-tuning and 500 m residual-audit workflows are available; both are diagnostic and leave production unchanged.</div>
+        </div>
+        <div class="status-line">
+          <div class="status-key">Agent serving</div>
+          <div class="status-value"><span class="ok">✓</span> Synchronized with data-lane cleaning contracts (Census sentinel fallbacks, feature attribution via ML.EXPLAIN_PREDICT, parameterizable model target).</div>
+        </div>
+        <div class="status-line">
+          <div class="status-key">Promotion & Rollback</div>
+          <div class="status-value"><code>data_plane.pipelines.promote_candidate</code> provides explicit model copy, backup, smoke testing and manual rollback with audit logging. This is not a transactional release or an approved quality gate; a failed post-copy smoke test does not automatically restore the backup.</div>
+        </div>
+        <div class="status-line">
+          <div class="status-key">Coverage</div>
+          <div class="status-value">The Atlanta request bounds (lat [33.55, 34.02], lon [-84.60, -84.15]) are input limits, not proof of validated model coverage within the box. Unsupported geography still requires review.</div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:16px">
+        <article class="card">
+          <h3>Tools available in ADK</h3>
+          <ul>
+            <li>Predict and explain heat offset.</li>
+            <li>Compare locations and census tracts.</li>
+            <li>Rank cooling center sites.</li>
+            <li>Query heat history and demographics.</li>
+            <li>Audit equity across selected tracts.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Safe next steps</h3>
+          <ol>
+            <li>Run the plan and review configuration/cost.</li>
+            <li>Train with <code>--execute</code> in an authorized environment.</li>
+            <li>Review the candidate, then run tuning and the buffer audit only if appropriate.</li>
+            <li>Review <code>VALIDATED_CANDIDATE</code>, <code>EXPERIMENT_COMPLETED</code>, or <code>BUFFER_AUDIT_COMPLETED</code>, including warnings and limitations.</li>
+            <li>Promote only through an explicit decision and a separate procedure.</li>
+            <li>Update agent tools and test predictions/explanations with the same cleanup logic.</li>
+          </ol>
+        </article>
+      </div>
+    </section>
+    <section id="ranking-evidence">
+      <div class="eyebrow">07 · Development evidence · 2026-10-27</div>
+      <h2>Does the model rank hot zones reliably?</h2>
+      <p>The selected use is a human-supervised heat-ranking pilot. The
+        <a href="MODEL_ACCEPTANCE.md">acceptance contract</a> is a draft pending approval,
+        not a production authorization. Heat ranking and vulnerability-weighted policy
+        priority are distinct outputs.</p>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Paired holdout results</h3>
+          <ul>
+            <li>3,218 identical held-out readings across 13 spatial cells.</li>
+            <li>21 tracts meet the draft minimum of 30 readings; seven are excluded.</li>
+            <li>Both candidates recover three of the five hottest measured tracts.</li>
+            <li>Spearman: 0.568 tuned; 0.581 buffered. NDCG@5: 0.687 for both.</li>
+            <li>Tract-mean absolute error: 1.031 F tuned; 1.020 F buffered.</li>
+          </ul>
+          <p>Model fitting anchors are aligned to the same evaluation labels.
+            See the <a href="ranking_audit_20261027.json">retained ranking report</a>.</p>
+        </article>
+        <article class="card">
+          <h3>Limits and false positives</h3>
+          <p>Both models rank tract <code>13121007900</code> first despite its measured
+            mean offset of -1.260 F. Predicted offsets are +1.663 F and +1.364 F.</p>
+          <p>Omitting one evaluation cell at a time gives Spearman ranges of
+            0.425&ndash;0.665 and 0.442&ndash;0.650. Eligible tracts vary from 16 to 21.
+            These are sampling-sensitivity results, not confidence intervals or
+            refitted spatial cross-validation.</p>
+          <p>The holdout has already been inspected. Observed-point tract means do
+            not validate serving-centroid rankings or future campaigns.</p>
+        </article>
+      </div>
+      <pre><code>python3 -m data_plane.pipelines.audit_ranking \
+  --project qwiklabs-gcp-03-1578f96a5a7a \
+  --source-run 20261027_163945_a1f7fcb70be3 \
+  --candidate-run 20261027_164544_b1e872144cc1 \
+  --candidate-run 20261027_165503_b3dad3b996e2 \
+  --execute --output ranking_audit.json</code></pre>
+    </section>
+
+    <section id="tree-planting">
+      <div class="eyebrow">08 · Scenario design · Benefits not yet estimable</div>
+      <h2>Where does planting buy the most relief per dollar?</h2>
+      <p>Selected horizon: ten years from planting. Proposed objective:
+        cumulative human ambient-heat exposure avoided per incremental lifecycle dollar.
+        This is a measurement proposal, not a validated cooling effect.</p>
+      <div class="grid-2">
+        <article class="card">
+          <h3>New data: useful, but not verified</h3>
+          <p><code>atlanta_tree_planting_optimization</code> adds declared plantable area,
+            marginal planting cost, land-surface temperature and access distances.</p>
+          <ul>
+            <li>109 unique, well-formed GEOIDs.</li>
+            <li>No missing or non-finite values in the six profiled numeric fields.</li>
+            <li>56 matches among 264 agent-eligible tracts: 21.2% coverage.</li>
+            <li>Declared costs: 300&ndash;1,500; area: 593.34&ndash;25,000.</li>
+          </ul>
+          <p>Units, source, vintage and whether fields are measured, estimated or
+            synthetic remain unverified. No table description or labels document them.
+            See <a href="planting_audit_20261027.json">planting audit evidence</a> and
+            <a href="canopy_audit_20261027.json">canopy audit evidence</a>.</p>
+        </article>
+        <article class="card">
+          <h3>What a defensible estimate requires</h3>
+          <p>Proposed exposure unit: person-degree-Celsius-hours above an agreed heat
+            threshold, comparing planting against no planting under identical conditions.</p>
+          <ul>
+            <li>Annual growth, survival, replacements and maintenance.</li>
+            <li>A defensible causal cooling response and hourly people present.</li>
+            <li>Verified cost units, currency, price year and discount conventions.</li>
+            <li>Feasible sites, uncertainty, overlapping benefits and equity constraints.</li>
+          </ul>
+          <p>Surface temperature is not ambient exposure. Canopy attribution is not
+            the cooling effect of planting. Dividing a heat score by cost does not
+            measure avoided exposure per dollar.</p>
+        </article>
+      </div>
+      <p>The audit deliberately returns a null relief-per-dollar value and no
+        recommended sites until required evidence is available. See the
+        <a href="TREE_PLANTING_SCENARIO.md">full scenario contract</a> and
+        <a href="BIGQUERY_SCHEMA.md">updated table schemas</a>. Agent integration,
+        training and promotion are unchanged.</p>
+      <pre><code>python3 -m data_plane.pipelines.audit_tree_planting \
+  --project qwiklabs-gcp-03-1578f96a5a7a \
+  --execute --output planting_audit.json</code></pre>
+      <p>Both audit commands are read-only BigQuery jobs, subject to query billing.
+        Omit <code>--execute</code> for a credential-free plan. Output paths must be new.</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      Guide to the repository workflow. The dated ranking and planting sections link
+      retained real audit results; other illustrative numbers are examples. Audit completion
+      is not production approval. Check versioned evidence and the BigQuery event log.
+    </div>
+  </footer>
+</body>
+</html>

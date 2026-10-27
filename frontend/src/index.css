@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 1);
+}
+
+@layer components {
+  /* Risk Level Badges */
+  .badge-risk-critical,
+  .risk-badge-critical {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-950/60 text-rose-300 border border-rose-500/40;
+  }
+  .badge-risk-high,
+  .risk-badge-high {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-950/60 text-orange-300 border border-orange-500/40;
+  }
+  .badge-risk-moderate,
+  .risk-badge-moderate {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-300 border border-amber-500/40;
+  }
+  .badge-risk-low,
+  .risk-badge-low {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-500/40;
+  }
+
+  /* Risk Mode Toggle Switch Pills (heat vs integratedRisk) */
+  .risk-toggle-group {
+    @apply inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800 gap-1 select-none shadow-inner;
+  }
+  .risk-toggle-pill {
+    @apply px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center gap-1.5 select-none;
+  }
+  .risk-toggle-pill-inactive {
+    @apply text-slate-400 hover:text-slate-200 hover:bg-slate-800/40;
+  }
+  .risk-toggle-pill-active-heat {
+    @apply bg-rose-950/60 text-rose-200 border border-rose-500/50 shadow-md shadow-rose-950/50;
+  }
+  .risk-toggle-pill-active-risk {
+    @apply bg-indigo-950/60 text-indigo-200 border border-indigo-500/50 shadow-md shadow-indigo-950/50;
+  }
+
+  /* Interactive Range Sliders: Custom styled track & thumb */
+  .custom-range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+  }
+  .custom-range-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #1e293b;
+    border-radius: 9999px;
+    border: 1px solid rgba(51, 65, 85, 0.6);
+  }
+  .custom-range-slider::-moz-range-track {
+    height: 6px;
+    background: #1e293b;
+    border-radius: 9999px;
+    border: 1px solid rgba(51, 65, 85, 0.6);
+  }
+  .custom-range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #f8fafc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    margin-top: -5px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .custom-range-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 2px 8px rgba(0, 0, 0, 0.7);
+  }
+  .custom-range-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #f8fafc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .custom-range-slider:hover::-moz-range-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 2px 8px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Slider Thumb Glow Overrides by Accent Color */
+  .custom-range-slider.accent-rose-500:hover::-webkit-slider-thumb,
+  .slider-rose:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 12px rgba(244, 63, 94, 0.85), 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+  .custom-range-slider.accent-amber-500:hover::-webkit-slider-thumb,
+  .slider-amber:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.85), 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+  .custom-range-slider.accent-indigo-500:hover::-webkit-slider-thumb,
+  .slider-indigo:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.85), 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+  .custom-range-slider.accent-sky-500:hover::-webkit-slider-thumb,
+  .slider-sky:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.85), 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+  .custom-range-slider.accent-emerald-500:hover::-webkit-slider-thumb,
+  .slider-emerald:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.85), 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Tree Canopy Progress Bars */
+  .canopy-progress-bar {
+    @apply w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700/50 relative;
+  }
+  .canopy-progress-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-amber-500 via-lime-500 to-emerald-500;
+  }
+  .canopy-progress-deficit {
+    @apply h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-rose-600 via-amber-500 to-emerald-500;
+  }
+
+  /* Multi-Departmental Budget Progress Bars */
+  .budget-bar-parks {
+    @apply h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-emerald-600 to-teal-400 shadow-sm shadow-emerald-950;
+  }
+  .budget-bar-watershed {
+    @apply h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-cyan-600 to-blue-400 shadow-sm shadow-cyan-950;
+  }
+  .budget-bar-resilience {
+    @apply h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-indigo-600 to-violet-400 shadow-sm shadow-indigo-950;
+  }
+
+  /* Tree Canopy Level Badges */
+  .badge-canopy-target {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-500/40;
+  }
+  .badge-canopy-median {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-lime-950/60 text-lime-300 border border-lime-500/40;
+  }
+  .badge-canopy-deficit {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-300 border border-amber-500/40;
+  }
+  .badge-canopy-critical {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-950/60 text-rose-300 border border-rose-500/40;
+  }
+
+  /* Bivariate Lens Hotspot Badges */
+  .bivariate-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-rose-950/80 via-amber-950/80 to-slate-900 border border-rose-500/50 text-rose-200 shadow-md shadow-rose-950/50;
+  }
+}
+
+@layer utilities {
+  /* Subtle dark mode scrollbars for modal and panel overflow containers */
+  .modal-scroll-container {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.6) rgba(15, 23, 42, 0.5);
+  }
+
+  .modal-scroll-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .modal-scroll-container::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 9999px;
+  }
+
+  .modal-scroll-container::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.6);
+    border-radius: 9999px;
+    border: 1px solid rgba(15, 23, 42, 0.4);
+  }
+
+  .modal-scroll-container::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.9);
+  }
+
+  /* Interactive card states */
+  .interactive-card {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .interactive-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Map Marker Styling Helpers: circular asset pins with glowing drop-shadows */
+  .small-asset-marker,
+  .custom-asset-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .small-asset-marker:hover,
+  .custom-asset-pin:hover {
+    transform: scale(1.18) translateY(-2px);
+    z-index: 1000 !important;
+  }
+
+  .small-asset-marker:active,
+  .custom-asset-pin:active {
+    transform: scale(0.95);
+  }
+
+  /* Smooth child transitions inside markers */
+  .small-asset-marker > div,
+  .custom-asset-pin > div {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.2s ease;
+  }
+
+  .small-asset-marker:hover > div,
+  .custom-asset-pin:hover > div {
+    filter: brightness(1.12);
+  }
+
+  /* 28x28 & 30x30 Circular Pin Badges */
+  .asset-circle-pin,
+  .asset-pin-28,
+  .asset-pin-30 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    line-height: 1;
+    font-size: 13px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.6), 0 3px 8px rgba(0, 0, 0, 0.7);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .asset-pin-28 {
+    width: 28px;
+    height: 28px;
+  }
+
+  .asset-pin-30 {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Glowing drop-shadow presets by asset theme */
+  .glow-cyan {
+    box-shadow: 0 0 14px rgba(6, 182, 212, 0.7), 0 3px 8px rgba(0, 0, 0, 0.7);
+  }
+  .glow-cyan:hover,
+  .custom-asset-pin:hover .glow-cyan,
+  .small-asset-marker:hover .glow-cyan {
+    box-shadow: 0 0 22px rgba(34, 211, 238, 0.95), 0 5px 12px rgba(0, 0, 0, 0.85);
+  }
+
+  .glow-amber {
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.7), 0 3px 8px rgba(0, 0, 0, 0.7);
+  }
+  .glow-amber:hover,
+  .custom-asset-pin:hover .glow-amber,
+  .small-asset-marker:hover .glow-amber {
+    box-shadow: 0 0 22px rgba(251, 191, 36, 0.95), 0 5px 12px rgba(0, 0, 0, 0.85);
+  }
+
+  .glow-indigo {
+    box-shadow: 0 0 14px rgba(99, 102, 241, 0.7), 0 3px 8px rgba(0, 0, 0, 0.7);
+  }
+  .glow-indigo:hover,
+  .custom-asset-pin:hover .glow-indigo,
+  .small-asset-marker:hover .glow-indigo {
+    box-shadow: 0 0 22px rgba(129, 140, 248, 0.95), 0 5px 12px rgba(0, 0, 0, 0.85);
+  }
+
+  .glow-emerald {
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.7), 0 3px 8px rgba(0, 0, 0, 0.7);
+  }
+  .glow-emerald:hover,
+  .custom-asset-pin:hover .glow-emerald,
+  .small-asset-marker:hover .glow-emerald {
+    box-shadow: 0 0 22px rgba(52, 211, 153, 0.95), 0 5px 12px rgba(0, 0, 0, 0.85);
+  }
+
+  .glow-rose {
+    box-shadow: 0 0 14px rgba(244, 63, 94, 0.7), 0 3px 8px rgba(0, 0, 0, 0.7);
+  }
+  .glow-rose:hover,
+  .custom-asset-pin:hover .glow-rose,
+  .small-asset-marker:hover .glow-rose {
+    box-shadow: 0 0 22px rgba(251, 113, 133, 0.95), 0 5px 12px rgba(0, 0, 0, 0.85);
+  }
+
+  /* Bivariate lens hotspot pulses or glowing rings */
+  .bivariate-hotspot-glow {
+    animation: bivariatePulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+/* Leaflet custom divIcon default wrapper reset */
+.leaflet-div-icon.custom-asset-pin,
+.leaflet-div-icon.small-asset-marker,
+.leaflet-div-icon.candidate-cooling-pin,
+.leaflet-div-icon.bivariate-hotspot-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bivariatePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7), 0 0 14px rgba(245, 158, 11, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(244, 63, 94, 0), 0 0 24px rgba(245, 158, 11, 0.95);
+  }
+}

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlanta Urban Climate Resilience Advisor — 2-Slide Pitch Deck</title>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --primary-dark: #1557b0;
+      --danger: #d93025;
+      --warning: #f29900;
+      --success: #1e8e3e;
+      --dark: #202124;
+      --card-bg: #ffffff;
+      --bg: #f8f9fa;
+      --text: #3c4043;
+      --text-muted: #5f6368;
+      --border: #dadce0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #2b2d42;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 30px;
+    }
+
+    .slide-wrapper {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      padding: 40px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #edf2f7;
+      padding-bottom: 16px;
+    }
+    .badge-group {
+      display: flex;
+      gap: 8px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-google { background: #e8f0fe; color: #1a73e8; }
+    .badge-track { background: #fef7e0; color: #b06000; }
+    .badge-city { background: #fce8e6; color: #c5221f; }
+    .badge-live { background: #e6f4ea; color: #137333; }
+
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+      margin-top: 4px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex-grow: 1;
+      margin-top: 18px;
+      margin-bottom: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+      flex-grow: 1;
+      margin-top: 18px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      background: #f8fafd;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a73e8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card ul {
+      list-style-type: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card li {
+      font-size: 13px;
+      line-height: 1.45;
+      color: #333;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .card li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #1a73e8;
+      font-weight: bold;
+    }
+
+    .highlight-red {
+      color: #d93025;
+      font-weight: 700;
+    }
+    .highlight-blue {
+      color: #1a73e8;
+      font-weight: 700;
+    }
+    .highlight-green {
+      color: #1e8e3e;
+      font-weight: 700;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+    th {
+      background: #e8f0fe;
+      color: #1a73e8;
+      text-align: left;
+      padding: 7px 10px;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #edf2f7;
+      color: #2d3748;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Stat Box */
+    .stat-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .stat-box {
+      flex: 1;
+      background: #ffffff;
+      border: 1px solid #d2e3fc;
+      border-radius: 8px;
+      padding: 8px 12px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1a73e8;
+    }
+    .stat-lbl {
+      font-size: 10px;
+      color: #5f6368;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #edf2f7;
+      padding-top: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .key-callout {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 8px 12px;
+      font-size: 12px;
+      border-radius: 0 6px 6px 0;
+      margin-top: 6px;
+      color: #92400e;
+      font-weight: 500;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+        gap: 0;
+      }
+      .slide-wrapper {
+        page-break-after: always;
+        box-shadow: none;
+        border-radius: 0;
+        width: 100%;
+        height: 100vh;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+
+    .slide-tag {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #9aa0a6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Controls -->
+  <div class="no-print" style="color: #fff; font-size: 13px; display: flex; gap: 15px; align-items: center;">
+    <span>⚡ <strong>AngelHack A4I Hackathon</strong> • 2-Slide Executive Deck</span>
+    <a href="Atlanta_Heat_Resilience_2_Slide_Deck.pptx" download style="background: #1e8e3e; color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">📥 Download PPTX</a>
+    <button onclick="window.print()" style="background: #1a73e8; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;">🖨️ Print / Save as PDF</button>
+  </div>
+
+  <!-- ==================== SLIDE 1 ==================== -->
+  <div class="slide-wrapper" id="slide1">
+    <div class="slide-tag">SLIDE 1 OF 2 • EXECUTIVE PITCH & RECOMMENDATION</div>
+    
+    <div class="header">
+      <div>
+        <div class="badge-group">
+          <span class="badge badge-track">Track: This Budget Cycle</span>
+          <span class="badge badge-city">Atlanta, GA</span>
+          <span class="badge badge-google">Google Skills / BigQuery ML</span>
+        </div>
+        <h1 class="title">Atlanta Heat Resilience & Pedestrian Walkability Advisor</h1>
+        <p class="subtitle">Fusing BigQuery ML Spatial Microclimates with CDC Equity Indices for Council-Ready Siting</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Left Column: Problem & Breakthrough -->
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="card">
+          <div class="card-title">⚠️ The Urban Heat Disparity (Atlanta, GA)</div>
+          <ul>
+            <li><strong>Airport Forecast Fallacy:</strong> Official warnings quote KATL Airport (95°F), hiding localized heat islands up to <span class="highlight-red">+4.77°F hotter</span> in asphalt corridors.</li>
+            <li><strong>Transit & Canopy Deprivation:</strong> In the hottest tracts, over <span class="highlight-red">47% of households have no vehicle</span> and tree canopy drops below 33%. Residents cannot drive across town to safety.</li>
+            <li><strong>The Planner's Task:</strong> Dana (City Manager's Office) must site <strong>3 permanent cooling centers</strong> before tomorrow's 9:00 AM City Council session.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💡 What Our Agent Does (The Breakthrough)</div>
+          <ul>
+            <li><strong>Predicts Offset, Not Raw Temp:</strong> Trained BigQuery ML <code>heat_offset_model</code> on NOAA Heat Watch traverses fused with 109 Census tracts and CDC SVI.</li>
+            <li><strong>10-Minute Pedestrian Walk Isochrones:</strong> Evaluates actual <strong>800-meter walkability rings</strong> instead of straight-line distance, protecting transit-dependent families.</li>
+            <li><strong>Natural Language GIS:</strong> Planners search street names ("Sweet Auburn", "Peoplestown"); agent geocodes, evaluates heat stress, and cites BQML factors in &lt;600ms.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right Column: Siting Recommendation Artifact & Equity Audit -->
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="card" style="flex: 1;">
+          <div class="card-title">🎯 Output Artifact: Ranked Siting Recommendations</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+            Composite Score = 0.40 × Offset + 0.30 × Poverty Rate + 0.30 × Carless Rate
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Site & Landmark</th>
+                <th>Offset</th>
+                <th>Poverty</th>
+                <th>Carless</th>
+                <th>10-Min Reach</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>#1 Sweet Auburn Hub</strong><br><span style="font-size: 10px; color: #5f6368;">Tract 44 • 33.758, -84.379</span></td>
+                <td><span class="highlight-red">+4.61°F</span></td>
+                <td>57.7%</td>
+                <td>47.2%</td>
+                <td><strong>8,420</strong> (9 min)</td>
+              </tr>
+              <tr>
+                <td><strong>#2 South Pryor Hub</strong><br><span style="font-size: 10px; color: #5f6368;">Tract 65 • 33.731, -84.394</span></td>
+                <td><span class="highlight-red">+4.77°F</span></td>
+                <td>48.1%</td>
+                <td>11.5%</td>
+                <td><strong>6,180</strong> (11 min)</td>
+              </tr>
+              <tr>
+                <td><strong>#3 Mechanicsville Rec</strong><br><span style="font-size: 10px; color: #5f6368;">Tract 66.01 • 33.740, -84.400</span></td>
+                <td><span class="highlight-red">+4.20°F</span></td>
+                <td>37.8%</td>
+                <td>22.0%</td>
+                <td><strong>5,340</strong> (7 min)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="stat-val">19,940</div>
+              <div class="stat-lbl">Residents Sheltered</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val">+4.53°F</div>
+              <div class="stat-lbl">Avg Heat Delta</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val">100%</div>
+              <div class="stat-lbl">Equity Audit Pass</div>
+            </div>
+          </div>
+
+          <div class="key-callout">
+            <strong>Outcome Equity Audit:</strong> 100% of sites beat Atlanta 75th-percentile hardship cutoffs (Poverty &ge; 24.5%, Carless &ge; 14.8%). Zero algorithmic equity drift. 1-click City Council Resolution Memo generated.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>AngelHack / Google A4I Challenge 1</span>
+      <span>Repo: github.com/agustincori/A4I2026-challenge-1-walkability</span>
+      <span>Dashboard: atlanta-heat-advisor-frontend-1004921377034.us-central1.run.app • Agent: atlanta-heat-advisor-1004921377034.us-central1.run.app</span>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 2 ==================== -->
+  <div class="slide-wrapper" id="slide2">
+    <div class="slide-tag">SLIDE 2 OF 2 • EXECUTION, RIGOR & HONEST LIMITATIONS</div>
+
+    <div class="header">
+      <div>
+        <div class="badge-group">
+          <span class="badge badge-google">Google Cloud Vertex AI</span>
+          <span class="badge badge-track">BigQuery ML Explainability</span>
+          <span class="badge badge-live">Cloud Run Live API</span>
+        </div>
+        <h1 class="title">Technical Architecture, Rigor, Limitations & Roadmap</h1>
+        <p class="subtitle">Defensible Engineering Choices, Explicit Bias Handling, and Strategic Vision</p>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <!-- Col 1: Tech Stack -->
+      <div class="card">
+        <div class="card-title">⚙️ Full-Stack Execution</div>
+        <ul>
+          <li><strong>Vertex AI & Gemini 2.5 Flash:</strong> Orchestrated via Google ADK runtime with 7 custom Python domain tools under 600ms latency.</li>
+          <li><strong>BigQuery ML <code>ML.EXPLAIN_PREDICT</code>:</strong> Unpacks microclimate drivers per block: canopy deficit (+2.4°F), asphalt density (+1.8°F), pre-1970 housing vintage.</li>
+          <li><strong>Production Cloud Run:</strong> Serverless Python agent hosting <code>/run</code> endpoint with structured JSON traces.</li>
+          <li><strong>Executive GIS Dashboard:</strong> React 18 + TypeScript + Leaflet with real-time baseline heat slider (85°–105°F) & 800m isochrones.</li>
+        </ul>
+      </div>
+
+      <!-- Col 2: Rigor & Defense -->
+      <div class="card">
+        <div class="card-title">🛡️ Rigor & Decisions Defended</div>
+        <ul>
+          <li><strong>Proactive Bias Handling:</strong> Race and ethnicity were <em>strictly excluded from model features</em> to prevent algorithmic redlining proxies.</li>
+          <li><strong>Outcome Equity Audit:</strong> Rather than assuming fair intent, the agent programmatically validates sites against citywide 75th-percentile hardship thresholds.</li>
+          <li><strong>Offset vs. Raw Temp:</strong> Raw temps overfit seasonal shifts; microclimate thermal deltas isolate permanent physical infrastructure effects.</li>
+          <li><strong>Data Schema Validation:</strong> Audited NOAA GHCN & CDC SVI joins for zero-null integrity across all 109 Atlanta tracts.</li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Honest Limitations & Roadmap -->
+      <div class="card">
+        <div class="card-title">🔍 Honest Limitations & Next Steps</div>
+        <ul>
+          <li><span class="highlight-red"><strong>Single-Day Traverse Baseline:</strong></span> NOAA Heat Watch data is captured on one representative hot day; extreme weather variances require longitudinal expansion.</li>
+          <li><span class="highlight-red"><strong>No Counterfactual Tree Simulation:</strong></span> <code>ML.EXPLAIN_PREDICT</code> diagnoses *why* a tract is hot, but cannot simulate post-planting cooling without multi-year canopy growth data.</li>
+          <li><span class="highlight-green"><strong>⚡ Today:</strong></span> Dispatch mobile hydration vans & cooling buses during Heat Advisories (&ge;95°F).</li>
+          <li><span class="highlight-green"><strong>🏛️ This Budget Cycle:</strong></span> Fund solar-reflective shade-sails at 42 unshaded MARTA stops inside the 10-minute walk buffers.</li>
+          <li><span class="highlight-green"><strong>🌳 This Decade:</strong></span> Urban reforestation program focused on bottom 20% canopy tracts.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>AngelHack / Google A4I Challenge 1</span>
+      <span>Evaluation Criteria: Impact (30) • Execution (30) • Rigor (25) • Craft (15) • Bonus (+10)</span>
+      <span>Presentation Time: &lt; 90 Seconds</span>
+    </div>
+  </div>
+
+</body>
+</html>
